@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduSmart Enterprise ERP — Zamonaviy Boshqaruv Tizimi</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81'
+            },
+            darkbg: '#0b0f19',
+            darkcard: '#111827',
+            darkborder: '#1f2937'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Styles -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f19;
+      color: #f3f4f6;
+    }
+
+    .glass-card {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 1.25rem;
+    }
+
+    .glass-card-sm {
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.875rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.875rem;
+      color: #9ca3af;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .sidebar-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+    }
+
+    .sidebar-item.active {
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+      color: #ffffff;
+      box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2937;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+
+    .toast-animate {
+      animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="h-full antialiased selection:bg-brand-500 selection:text-white flex overflow-hidden">
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-72 border-r border-gray-800/80 bg-[#0c111d] flex flex-col justify-between hidden lg:flex select-none z-20">
+    <div>
+      <!-- Brand Logo -->
+      <div class="h-20 px-6 flex items-center gap-3 border-b border-gray-800/60">
+        <div class="p-2.5 bg-gradient-to-tr from-brand-600 to-indigo-400 rounded-xl text-white shadow-lg shadow-brand-500/25">
+          <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">EduSmart</span>
+          <span class="block text-[10px] uppercase font-bold tracking-widest text-brand-500">Enterprise ERP</span>
+        </div>
+      </div>
+
+      <!-- Nav Menu -->
+      <nav class="p-4 space-y-1.5">
+        <div class="px-3 pb-2 text-[11px] font-semibold tracking-wider text-gray-500 uppercase">Asosiy menyu</div>
+        
+        <div onclick="switchSection('dashboard')" id="nav-dashboard" class="sidebar-item active">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Dashboard</span>
+        </div>
+
+        <div onclick="switchSection('students')" id="nav-students" class="sidebar-item">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>O'quvchilar Ba'zasi (50+)</span>
+        </div>
+
+        <div onclick="switchSection('grades')" id="nav-grades" class="sidebar-item">
+          <i data-lucide="award" class="w-5 h-5"></i>
+          <span>Baholar va Jurnal</span>
+        </div>
+
+        <div onclick="switchSection('finance')" id="nav-finance" class="sidebar-item">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+          <span>Moliya & To'lovlar</span>
+        </div>
+
+        <div onclick="switchSection('tasks')" id="nav-tasks" class="sidebar-item">
+          <i data-lucide="check-square" class="w-5 h-5"></i>
+          <span>Topshiriqlar Board</span>
+        </div>
+      </nav>
+    </div>
+
+    <!-- User Profile Box -->
+    <div class="p-4 border-t border-gray-800/60">
+      <div class="glass-card-sm p-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md">
+              XB
+            </div>
+            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-darkcard rounded-full"></span>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-white leading-snug">X.bunyodbek</h4>
+            <p class="text-xs text-brand-400 font-medium">Bosh admin / Dekan</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="flex-1 flex flex-col min-w-0 bg-[#0b0f19] overflow-hidden">
+    
+    <!-- TOP HEADER -->
+    <header class="h-20 border-b border-gray-800/80 bg-[#0c111d]/80 backdrop-blur-md px-6 flex items-center justify-between z-10">
+      <div class="flex items-center gap-4">
+        <div class="relative w-72 sm:w-96">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Tizim bo'yicha qidiruv (O'quvchi, fan, to'lov)..." class="w-full pl-10 pr-4 py-2 bg-gray-900/90 border border-gray-800 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="toggleQuickAddModal()" class="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-brand-600/20">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Yangi O'quvchi</span>
+        </button>
+
+        <div class="h-6 w-[1px] bg-gray-800 mx-1"></div>
+
+        <button onclick="showToast('Sizda 3 ta yangi bildirishnoma bor', 'info')" class="p-2.5 bg-gray-900 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 relative transition">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full animate-ping"></span>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN DYNAMIC CONTENT CONTAINER -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-8" id="content-container">
+
+      <!-- ================= SECTION 1: DASHBOARD ================= -->
+      <section id="sec-dashboard" class="space-y-8 animate-fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="glass-card p-5 relative overflow-hidden group">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jami O'quvchilar</p>
+                <h3 class="text-3xl font-extrabold text-white mt-2" id="stat-total-students">50</h3>
+              </div>
+              <div class="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl text-brand-400">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-emerald-400 font-semibold">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i>
+              <span>O'tgan oyga nisbatan +18.4%</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-5 relative overflow-hidden">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Bugungi Davomat</p>
+                <h3 class="text-3xl font-extrabold text-white mt-2">97.8%</h3>
+              </div>
+              <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                <i data-lucide="user-check" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-emerald-400 font-semibold">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i>
+              <span>A'lo ko'rsatkich</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-5 relative overflow-hidden">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">O'rtacha O'zlashtirish</p>
+                <h3 class="text-3xl font-extrabold text-white mt-2" id="stat-avg-gpa">4.52</h3>
+              </div>
+              <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
+                <i data-lucide="star" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-amber-400 font-semibold">
+              <i data-lucide="award" class="w-3.5 h-3.5 mr-1"></i>
+              <span>A'lochi o'quvchilar ko'paydi</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-5 relative overflow-hidden">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jami Shartnomalar</p>
+                <h3 class="text-3xl font-extrabold text-white mt-2" id="stat-total-revenue">$574,000</h3>
+              </div>
+              <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400">
+                <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-purple-400 font-semibold">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5 mr-1"></i>
+              <span>85% shartnomalar yig'ilgan</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="glass-card p-6 lg:col-span-2 flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-white">O'zlashtirish Dinamikasi</h3>
+                <p class="text-xs text-gray-400">Barcha 50+ o'quvchilarning akademik natijalari</p>
+              </div>
+              <span class="text-xs px-3 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-400 font-bold rounded-lg">2026-O'quv Yili</span>
+            </div>
+            <div class="h-72 w-full">
+              <canvas id="performanceChart"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-card p-6 flex flex-col justify-between">
+            <div class="mb-4">
+              <h3 class="text-lg font-bold text-white">Fakultetlar Ulushi</h3>
+              <p class="text-xs text-gray-400">O'quvchilarning yo'nalishlar bo'yicha ulushi</p>
+            </div>
+            <div class="h-60 flex items-center justify-center">
+              <canvas id="facultyChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white">So'nggi Qo'shilgan O'quvchilar</h3>
+              <p class="text-xs text-gray-400">Tizimdagi aktiv o'quvchilar sarasi</p>
+            </div>
+            <button onclick="switchSection('students')" class="text-xs text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1">
+              <span>Barcha 50+ O'quvchini Ko'rish</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-300">
+              <thead>
+                <tr class="text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-800 pb-3">
+                  <th class="py-3 px-4">O'quvchi</th>
+                  <th class="py-3 px-4">Yo'nalish</th>
+                  <th class="py-3 px-4">Bosqich</th>
+                  <th class="py-3 px-4">GPA</th>
+                  <th class="py-3 px-4">Holat</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-recent-tbody" class="divide-y divide-gray-800/60">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SECTION 2: STUDENTS BASE ================= -->
+      <section id="sec-students" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white">O'quvchilar Boshqaruvi (50 Ta)</h2>
+            <p class="text-xs text-gray-400">Qidiruv, filtrlash va ma'lumotlarni tahrirlash</p>
+          </div>
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <input type="text" id="students-search" oninput="renderStudentsTable()" placeholder="Ism yoki ID bo'yicha qidirish..." class="bg-gray-900 border border-gray-800 text-white px-4 py-2 rounded-xl text-xs focus:outline-none focus:border-brand-500 w-full sm:w-64">
+            <button onclick="openAddStudentModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>O'quvchi Qo'shish</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+          <div class="overflow-x-auto max-h-[650px]">
+            <table class="w-full text-left text-sm text-gray-300">
+              <thead class="bg-gray-900/80 sticky top-0 z-10 text-[11px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800">
+                <tr>
+                  <th class="py-4 px-6">ID & O'quvchi Ismi</th>
+                  <th class="py-4 px-6">Yo'nalishi</th>
+                  <th class="py-4 px-6">Bosqich</th>
+                  <th class="py-4 px-6">GPA / Baho</th>
+                  <th class="py-4 px-6">Telefon</th>
+                  <th class="py-4 px-6 text-right">Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body" class="divide-y divide-gray-800/60">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SECTION 3: GRADES & JOURNAL ================= -->
+      <section id="sec-grades" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Elektron Jurnal (Interaktiv)</h2>
+            <p class="text-xs text-gray-400">Kataklarga bosib bahoni o'zgartiring (3, 4, 5)</p>
+          </div>
+          <select id="journal-subject-select" class="bg-gray-900 border border-gray-800 text-white text-xs px-3 py-2 rounded-xl font-semibold">
+            <option value="Dasturlash (Full-Stack)">Dasturlash (Full-Stack)</option>
+            <option value="Matematika va Logika">Matematika va Logika</option>
+            <option value="Sun'iy Intellekt">Sun'iy Intellekt</option>
+          </select>
+        </div>
+
+        <div class="glass-card p-6 overflow-x-auto max-h-[600px]">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-900/80 sticky top-0 z-10">
+              <tr class="border-b border-gray-800 text-xs text-gray-400 uppercase">
+                <th class="py-3 px-4 min-w-[200px]">O'quvchi</th>
+                <th class="py-3 px-2 text-center">1-Dars</th>
+                <th class="py-3 px-2 text-center">2-Dars</th>
+                <th class="py-3 px-2 text-center">3-Dars</th>
+                <th class="py-3 px-2 text-center">4-Dars</th>
+                <th class="py-3 px-2 text-center">5-Dars</th>
+                <th class="py-3 px-2 text-center">O'rtacha GPA</th>
+              </tr>
+            </thead>
+            <tbody id="gradebook-tbody" class="divide-y divide-gray-800/60 text-sm">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= SECTION 4: FINANCE & TUITION ================= -->
+      <section id="sec-finance" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Moliya va To'lovlar (50 Ta O'quvchi)</h2>
+            <p class="text-xs text-gray-400">Shartnoma va qarzdorliklar statistikasi</p>
+          </div>
+          <button onclick="openPaymentModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
+            <i data-lucide="credit-card" class="w-4 h-4"></i>
+            <span>To'lov Qabul Qilish</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div class="glass-card p-5 border-l-4 border-l-emerald-500">
+            <p class="text-xs text-gray-400 uppercase font-bold">Jami Yig'ilgan</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1" id="fin-total-collected">$0</h3>
+          </div>
+          <div class="glass-card p-5 border-l-4 border-l-amber-500">
+            <p class="text-xs text-gray-400 uppercase font-bold">Kutilayotgan Qoldiq</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1" id="fin-pending">$0</h3>
+          </div>
+          <div class="glass-card p-5 border-l-4 border-l-brand-500">
+            <p class="text-xs text-gray-400 uppercase font-bold">Bajarilish Ko'rsatkichi</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1">87.5%</h3>
+          </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+          <div class="overflow-x-auto max-h-[500px]">
+            <table class="w-full text-left text-sm text-gray-300">
+              <thead class="bg-gray-900/80 sticky top-0 z-10 text-[11px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800">
+                <tr>
+                  <th class="py-4 px-6">O'quvchi</th>
+                  <th class="py-4 px-6">Shartnoma Summasi</th>
+                  <th class="py-4 px-6">To'langan</th>
+                  <th class="py-4 px-6">Qarzdorlik</th>
+                  <th class="py-4 px-6">Holat</th>
+                </tr>
+              </thead>
+              <tbody id="finance-tbody" class="divide-y divide-gray-800/60">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SECTION 5: TASKS KANBAN ================= -->
+      <section id="sec-tasks" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Topshiriqlar Board (Kanban)</h2>
+            <p class="text-xs text-gray-400">O'quvchilarning vazifalari va imtihon grafigi</p>
+          </div>
+          <button onclick="addNewTaskPrompt()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Vazifa Qo'shish</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-card p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+              <span class="font-bold text-sm text-gray-300 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Rejalashtirilgan
+              </span>
+              <span class="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400 font-bold" id="task-count-todo">0</span>
+            </div>
+            <div id="tasks-todo-container" class="space-y-3"></div>
+          </div>
+
+          <div class="glass-card p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+              <span class="font-bold text-sm text-gray-300 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Tekshiruvda
+              </span>
+              <span class="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400 font-bold" id="task-count-progress">0</span>
+            </div>
+            <div id="tasks-progress-container" class="space-y-3"></div>
+          </div>
+
+          <div class="glass-card p-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+              <span class="font-bold text-sm text-gray-300 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Yakunlangan
+              </span>
+              <span class="text-xs bg-gray-800 px-2 py-0.5 rounded-full text-gray-400 font-bold" id="task-count-done">0</span>
+            </div>
+            <div id="tasks-done-container" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: ADD STUDENT -->
+  <div id="modal-add-student" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="glass-card w-full max-w-md p-6 space-y-5 border border-gray-700 animate-fade-in">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Yangi O'quvchi Qo'shish</h3>
+        <button onclick="closeAddStudentModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="add-student-form" onsubmit="handleAddStudent(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">To'liq Ism (F.I.O)</label>
+          <input type="text" required id="form-name" placeholder="Masalan: Sardor Alimov" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">Yo'nalish / Mutaxassislik</label>
+          <select id="form-faculty" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+            <option value="Dasturiy Muhandislik">Dasturiy Muhandislik</option>
+            <option value="Kiberxavfsizlik">Kiberxavfsizlik</option>
+            <option value="Sun'iy Intellekt">Sun'iy Intellekt</option>
+            <option value="Komp'yuter Grafikasi">Komp'yuter Grafikasi</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Bosqich</label>
+            <input type="text" id="form-stage" placeholder="3-Bosqich" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Telefon</label>
+            <input type="text" id="form-phone" placeholder="+998 90..." required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+          </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-3">
+          <button type="button" onclick="closeAddStudentModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-semibold">Bekor Qilish</button>
+          <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold">Saqlash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT STATE ENGINE -->
+  <script>
+    const state = {
+      students: [
+        { id: "ST-429", name: "ali.xasanov", faculty: "Dasturiy Muhandislik", stage: "3-Bosqich", gpa: 5.00, phone: "+998 93 834 86 90", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-101", name: "Sardor Rahimov", faculty: "Dasturiy Muhandislik", stage: "3-Bosqich", gpa: 4.90, phone: "+998 90 123 45 67", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 5, 4] },
+        { id: "ST-102", name: "Malika Ikromova", faculty: "Sun'iy Intellekt", stage: "2-Bosqich", gpa: 4.80, phone: "+998 93 456 78 90", feeTotal: 12000, feePaid: 10000, grades: [5, 4, 5, 5, 5] },
+        { id: "ST-103", name: "Jahongir Karimov", faculty: "Kiberxavfsizlik", stage: "4-Bosqich", gpa: 4.25, phone: "+998 97 890 12 34", feeTotal: 11000, feePaid: 8500, grades: [4, 4, 3, 5, 4] },
+        { id: "ST-104", name: "Diyora Umarova", faculty: "Komp'yuter Grafikasi", stage: "1-Bosqich", gpa: 4.95, phone: "+998 91 234 56 78", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-105", name: "Azizbek Tursunov", faculty: "Dasturiy Muhandislik", stage: "2-Bosqich", gpa: 3.80, phone: "+998 94 567 89 01", feeTotal: 12000, feePaid: 6000, grades: [3, 4, 4, 3, 4] },
+        { id: "ST-106", name: "Bobur Mansurov", faculty: "Kiberxavfsizlik", stage: "3-Bosqich", gpa: 4.60, phone: "+998 90 987 65 43", feeTotal: 11000, feePaid: 11000, grades: [5, 4, 5, 4, 5] },
+        { id: "ST-107", name: "Madina Qosimova", faculty: "Sun'iy Intellekt", stage: "1-Bosqich", gpa: 4.85, phone: "+998 99 111 22 33", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 4, 5, 5] },
+        { id: "ST-108", name: "Otabek Mahmudov", faculty: "Dasturiy Muhandislik", stage: "4-Bosqich", gpa: 4.10, phone: "+998 93 333 44 55", feeTotal: 12000, feePaid: 9000, grades: [4, 4, 4, 4, 5] },
+        { id: "ST-109", name: "Gulnoza Zokirova", faculty: "Komp'yuter Grafikasi", stage: "2-Bosqich", gpa: 4.70, phone: "+998 97 555 66 77", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 4, 4, 5] },
+        { id: "ST-110", name: "Jasur Nematov", faculty: "Kiberxavfsizlik", stage: "2-Bosqich", gpa: 3.95, phone: "+998 90 777 88 99", feeTotal: 11000, feePaid: 5000, grades: [4, 3, 4, 4, 4] },
+        { id: "ST-111", name: "Shaxnoza Olimova", faculty: "Sun'iy Intellekt", stage: "3-Bosqich", gpa: 5.00, phone: "+998 94 888 99 00", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-112", name: "Rustam Ergashev", faculty: "Dasturiy Muhandislik", stage: "1-Bosqich", gpa: 4.40, phone: "+998 91 444 55 66", feeTotal: 12000, feePaid: 8000, grades: [4, 5, 4, 4, 5] },
+        { id: "ST-113", name: "Nigora Alimova", faculty: "Komp'yuter Grafikasi", stage: "3-Bosqich", gpa: 4.55, phone: "+998 93 222 33 44", feeTotal: 10000, feePaid: 10000, grades: [5, 4, 5, 4, 5] },
+        { id: "ST-114", name: "Kamronbek Isoqov", faculty: "Kiberxavfsizlik", stage: "1-Bosqich", gpa: 4.30, phone: "+998 97 111 44 55", feeTotal: 11000, feePaid: 11000, grades: [4, 4, 5, 4, 4] },
+        { id: "ST-115", name: "Lola Sobirova", faculty: "Sun'iy Intellekt", stage: "4-Bosqich", gpa: 4.90, phone: "+998 90 666 77 88", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 4, 5] },
+        { id: "ST-116", name: "Bekzod Toirov", faculty: "Dasturiy Muhandislik", stage: "2-Bosqich", gpa: 4.20, phone: "+998 93 101 20 30", feeTotal: 12000, feePaid: 10000, grades: [4, 4, 5, 4, 4] },
+        { id: "ST-117", name: "Sevinch Yuldasheva", faculty: "Komp'yuter Grafikasi", stage: "1-Bosqich", gpa: 4.80, phone: "+998 99 202 30 40", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 4, 5, 5] },
+        { id: "ST-118", name: "Anvar Hakimov", faculty: "Kiberxavfsizlik", stage: "3-Bosqich", gpa: 3.75, phone: "+998 97 303 40 50", feeTotal: 11000, feePaid: 6000, grades: [3, 4, 4, 3, 5] },
+        { id: "ST-119", name: "Zohida Keldiyorova", faculty: "Sun'iy Intellekt", stage: "2-Bosqich", gpa: 4.65, phone: "+998 90 404 50 60", feeTotal: 12000, feePaid: 12000, grades: [5, 4, 5, 5, 4] },
+        { id: "ST-120", name: "Sherzod Narzullayev", faculty: "Dasturiy Muhandislik", stage: "4-Bosqich", gpa: 4.50, phone: "+998 94 505 60 70", feeTotal: 12000, feePaid: 12000, grades: [5, 4, 4, 5, 5] },
+        { id: "ST-121", name: "Zuhra Niyozova", faculty: "Komp'yuter Grafikasi", stage: "2-Bosqich", gpa: 4.10, phone: "+998 91 606 70 80", feeTotal: 10000, feePaid: 7000, grades: [4, 4, 4, 4, 4] },
+        { id: "ST-122", name: "Ulug'bek Samadov", faculty: "Kiberxavfsizlik", stage: "1-Bosqich", gpa: 4.45, phone: "+998 93 707 80 90", feeTotal: 11000, feePaid: 11000, grades: [5, 4, 4, 4, 5] },
+        { id: "ST-123", name: "Feruza Axmedova", faculty: "Sun'iy Intellekt", stage: "3-Bosqich", gpa: 4.95, phone: "+998 97 808 90 01", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-124", name: "Doston Yoqubov", faculty: "Dasturiy Muhandislik", stage: "1-Bosqich", gpa: 3.90, phone: "+998 90 909 01 02", feeTotal: 12000, feePaid: 8000, grades: [4, 3, 4, 4, 4] },
+        { id: "ST-125", name: "Mohira Abdullayeva", faculty: "Komp'yuter Grafikasi", stage: "4-Bosqich", gpa: 4.85, phone: "+998 99 010 12 23", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 5, 4, 5] },
+        { id: "ST-126", name: "Asadbek Bozorov", faculty: "Kiberxavfsizlik", stage: "2-Bosqich", gpa: 4.15, phone: "+998 94 121 23 34", feeTotal: 11000, feePaid: 9000, grades: [4, 4, 5, 3, 5] },
+        { id: "ST-127", name: "Nargiza Rustamova", faculty: "Sun'iy Intellekt", stage: "1-Bosqich", gpa: 4.70, phone: "+998 91 232 34 45", feeTotal: 12000, feePaid: 12000, grades: [5, 4, 5, 5, 4] },
+        { id: "ST-128", name: "Javohir Qodirov", faculty: "Dasturiy Muhandislik", stage: "3-Bosqich", gpa: 4.60, phone: "+998 93 343 45 56", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 4, 4, 5] },
+        { id: "ST-129", name: "Shahzoda Xalilova", faculty: "Komp'yuter Grafikasi", stage: "2-Bosqich", gpa: 4.30, phone: "+998 97 454 56 67", feeTotal: 10000, feePaid: 5000, grades: [4, 4, 4, 5, 4] },
+        { id: "ST-130", name: "Islom Vohidov", faculty: "Kiberxavfsizlik", stage: "4-Bosqich", gpa: 4.80, phone: "+998 90 565 67 78", feeTotal: 11000, feePaid: 11000, grades: [5, 5, 5, 4, 5] },
+        { id: "ST-131", name: "Umida Botirova", faculty: "Sun'iy Intellekt", stage: "2-Bosqich", gpa: 4.40, phone: "+998 99 676 78 89", feeTotal: 12000, feePaid: 10000, grades: [4, 5, 4, 4, 5] },
+        { id: "ST-132", name: "Farrux Hamroyev", faculty: "Dasturiy Muhandislik", stage: "2-Bosqich", gpa: 3.85, phone: "+998 94 787 89 90", feeTotal: 12000, feePaid: 6000, grades: [4, 3, 4, 4, 4] },
+        { id: "ST-133", name: "Shohida Toshpulatova", faculty: "Komp'yuter Grafikasi", stage: "3-Bosqich", gpa: 4.90, phone: "+998 91 898 90 01", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 5, 5, 4] },
+        { id: "ST-134", name: "Mirzo Sodiqov", faculty: "Kiberxavfsizlik", stage: "3-Bosqich", gpa: 4.25, phone: "+998 93 909 01 12", feeTotal: 11000, feePaid: 8000, grades: [4, 4, 4, 5, 4] },
+        { id: "ST-135", name: "Munisa G'ofurova", faculty: "Sun'iy Intellekt", stage: "4-Bosqich", gpa: 5.00, phone: "+998 97 010 12 23", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-136", name: "Temur Nuriddinov", faculty: "Dasturiy Muhandislik", stage: "4-Bosqich", gpa: 4.05, phone: "+998 90 121 23 34", feeTotal: 12000, feePaid: 12000, grades: [4, 4, 4, 4, 4] },
+        { id: "ST-137", name: "Dilnoza Inoyatova", faculty: "Komp'yuter Grafikasi", stage: "1-Bosqich", gpa: 4.75, phone: "+998 99 232 34 45", feeTotal: 10000, feePaid: 8000, grades: [5, 5, 4, 5, 5] },
+        { id: "ST-138", name: "Sanjar Latipov", faculty: "Kiberxavfsizlik", stage: "2-Bosqich", gpa: 4.35, phone: "+998 94 343 45 56", feeTotal: 11000, feePaid: 11000, grades: [4, 5, 4, 4, 4] },
+        { id: "ST-139", name: "Guli Murodova", faculty: "Sun'iy Intellekt", stage: "1-Bosqich", gpa: 4.65, phone: "+998 91 454 56 67", feeTotal: 12000, feePaid: 12000, grades: [5, 4, 5, 5, 4] },
+        { id: "ST-140", name: "Xalil Rahmatov", faculty: "Dasturiy Muhandislik", stage: "1-Bosqich", gpa: 3.95, phone: "+998 93 565 67 78", feeTotal: 12000, feePaid: 7000, grades: [4, 4, 3, 4, 4] },
+        { id: "ST-141", name: "Rayhona Ashurova", faculty: "Komp'yuter Grafikasi", stage: "4-Bosqich", gpa: 4.95, phone: "+998 97 676 78 89", feeTotal: 10000, feePaid: 10000, grades: [5, 5, 5, 5, 5] },
+        { id: "ST-142", name: "Otabek Turdiyev", faculty: "Kiberxavfsizlik", stage: "1-Bosqich", gpa: 4.10, phone: "+998 90 787 89 90", feeTotal: 11000, feePaid: 6000, grades: [4, 4, 4, 4, 4] },
+        { id: "ST-143", name: "Zuhra Sultonova", faculty: "Sun'iy Intellekt", stage: "3-Bosqich", gpa: 4.80, phone: "+998 99 898 90 01", feeTotal: 12000, feePaid: 12000, grades: [5, 5, 4, 5, 5] },
+        { id: "ST-144", name: "Eldor Nishonov", faculty: "Dasturiy Muhandislik", stage: "3-Bosqich", gpa: 4.50, phone: "+998 94 909 01 12", feeTotal: 12000, feePaid: 12000, grades: [5, 4, 5, 4, 5] },
+        { id: "ST-145", name: "Dina Qosimova", faculty: "Komp'yuter Grafikasi", stage: "2-Bosqich", gpa: 4.20, phone: "+998 91 010 12 23", feeTotal: 10000, feePaid: 9000, grades: [4, 4, 4, 4, 5] },
+        { id: "ST-146", name: "Farhod Usmonov", faculty: "Kiberxavfsizlik", stage: "4-Bosqich", gpa: 4.70, phone: "+998 93 121 23 34", feeTotal: 11000, feePaid: 11000, grades: [5, 5, 4, 5, 4] },
+        { id: "ST-147", name: "Kamila Yoqubova", faculty: "Sun'iy Intellekt", stage: "2-Bosqich", gpa: 4.85, phone: "+998 97 232 34 45", feeTotal: 12000, feePaid: 10000, grades: [5, 5, 5, 4, 5] },
+        { id: "ST-148", name: "Shohruh Meliyev", faculty: "Dasturiy Muhandislik", stage: "2-Bosqich", gpa: 4.30, phone: "+998 90 343 45 56", feeTotal: 12000, feePaid: 12000, grades: [4, 5, 4, 4, 4] },
+        { id: "ST-149", name: "Aziza Sharipova", faculty: "Komp'yuter Grafikasi", stage: "3-Bosqich", gpa: 4.60, phone: "+998 99 454 56 67", feeTotal: 10000, feePaid: 10000, grades: [5, 4, 5, 5, 4] },
+        { id: "ST-150", name: "Jahongir Olimov", faculty: "Kiberxavfsizlik", stage: "3-Bosqich", gpa: 4.40, phone: "+998 94 565 67 78", feeTotal: 11000, feePaid: 11000, grades: [4, 5, 4, 4, 5] }
+      ],
+      tasks: [
+        { id: 1, title: "React.js loyiha himoyasi", subject: "Web Dasturlash", dueDate: "Ertaga, 18:00", status: "todo" },
+        { id: 2, title: "SQL Ma'lumotlar bazasi testi", subject: "Database", dueDate: "25-Oktabr", status: "todo" },
+        { id: 3, title: "Algoritmlar bo'yicha hisobot", subject: "Matematika", dueDate: "Bugun, 23:59", status: "progress" },
+        { id: 4, title: "UI/UX Figma prototip", subject: "Dizayn", dueDate: "Kecha", status: "progress" },
+        { id: 5, title: "Python Telegram Bot topshirig'i", subject: "Backend", dueDate: "Bajarilgan", status: "done" }
+      ]
+    };
+
+    let performanceChartInstance = null;
+    let facultyChartInstance = null;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-brand-600';
+      toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 toast-animate pointer-events-auto cursor-pointer`;
+      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function switchSection(secName) {
+      const sections = ['dashboard', 'students', 'grades', 'finance', 'tasks'];
+      sections.forEach(s => {
+        const el = document.getElementById(`sec-${s}`);
+        const nav = document.getElementById(`nav-${s}`);
+        if (s === secName) {
+          el.classList.remove('hidden');
+          nav.classList.add('active');
+        } else {
+          el.classList.add('hidden');
+          nav.classList.remove('active');
+        }
+      });
+    }
+
+    function handleGlobalSearch(query) {
+      if (!query.trim()) return;
+      const lower = query.toLowerCase();
+      const match = state.students.find(s => s.name.toLowerCase().includes(lower) || s.id.toLowerCase().includes(lower));
+      if (match) {
+        switchSection('students');
+        document.getElementById('students-search').value = query;
+        renderStudentsTable();
+      }
+    }
+
+    function renderDashboard() {
+      document.getElementById('stat-total-students').innerText = state.students.length;
+      const avgGpa = (state.students.reduce((acc, curr) => acc + curr.gpa, 0) / state.students.length).toFixed(2);
+      document.getElementById('stat-avg-gpa').innerText = avgGpa;
+      
+      const totalRev = state.students.reduce((acc, curr) => acc + curr.feePaid, 0);
+      document.getElementById('stat-total-revenue').innerText = '$' + totalRev.toLocaleString();
+
+      const tbody = document.getElementById('dashboard-recent-tbody');
+      tbody.innerHTML = state.students.slice(0, 5).map(s => `
+        <tr class="hover:bg-gray-800/40 transition">
+          <td class="py-3 px-4 font-semibold text-white flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-xs text-brand-400">
+              ${s.name.charAt(0)}
+            </div>
+            <div>
+              <p class="text-xs font-bold">${s.name}</p>
+              <p class="text-[10px] text-gray-500">${s.id}</p>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-xs">${s.faculty}</td>
+          <td class="py-3 px-4 text-xs">${s.stage}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded-md text-xs font-extrabold ${s.gpa >= 4.5 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400'}">${s.gpa}</span>
+          </td>
+          <td class="py-3 px-4 text-xs text-emerald-400 font-bold">Faol</td>
+        </tr>
+      `).join('');
+
+      initCharts();
+    }
+
+    function initCharts() {
+      if (performanceChartInstance) performanceChartInstance.destroy();
+      if (facultyChartInstance) facultyChartInstance.destroy();
+
+      const ctx1 = document.getElementById('performanceChart').getContext('2d');
+      performanceChartInstance = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['Sentyabr', 'Oktabr', 'Noyabr', 'Dekabr', 'Yanvar', 'Fevral'],
+          datasets: [{
+            label: 'O\'rtacha Ball',
+            data: [4.1, 4.3, 4.45, 4.52, 4.6, 4.72],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+          }
+        }
+      });
+
+      const ctx2 = document.getElementById('facultyChart').getContext('2d');
+      facultyChartInstance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Dasturlash', 'Sun\'iy Intellekt', 'Kiberxavfsizlik', 'Grafika'],
+          datasets: [{
+            data: [18, 12, 11, 9],
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }
+        }
+      });
+    }
+
+    function renderStudentsTable() {
+      const query = (document.getElementById('students-search')?.value || '').toLowerCase();
+      const tbody = document.getElementById('students-table-body');
+      
+      const filtered = state.students.filter(s => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query));
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr class="hover:bg-gray-800/40 transition">
+          <td class="py-4 px-6 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-xs">
+              ${s.name.charAt(0)}
+            </div>
+            <div>
+              <p class="font-bold text-white text-xs">${s.name}</p>
+              <p class="text-[10px] text-gray-500">${s.id}</p>
+            </div>
+          </td>
+          <td class="py-4 px-6 text-xs text-gray-300">${s.faculty}</td>
+          <td class="py-4 px-6 text-xs text-gray-300">${s.stage}</td>
+          <td class="py-4 px-6">
+            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-500/10 text-brand-400 border border-brand-500/20">${s.gpa}</span>
+          </td>
+          <td class="py-4 px-6 text-xs text-gray-400">${s.phone}</td>
+          <td class="py-4 px-6 text-right">
+            <button onclick="deleteStudent('${s.id}')" class="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openAddStudentModal() { document.getElementById('modal-add-student').classList.remove('hidden'); }
+    function closeAddStudentModal() { document.getElementById('modal-add-student').classList.add('hidden'); }
+    
+    function handleAddStudent(e) {
+      e.preventDefault();
+      const newStudent = {
+        id: "ST-" + Math.floor(151 + Math.random() * 800),
+        name: document.getElementById('form-name').value,
+        faculty: document.getElementById('form-faculty').value,
+        stage: document.getElementById('form-stage').value,
+        gpa: 5.0,
+        phone: document.getElementById('form-phone').value,
+        feeTotal: 12000,
+        feePaid: 0,
+        grades: [5, 5, 5, 5, 5]
+      };
+      
+      state.students.unshift(newStudent);
+      closeAddStudentModal();
+      renderStudentsTable();
+      renderDashboard();
+      renderGradebook();
+      renderFinance();
+      showToast("Yangi o'quvchi qo'shildi!");
+    }
+
+    function deleteStudent(id) {
+      state.students = state.students.filter(s => s.id !== id);
+      renderStudentsTable();
+      renderDashboard();
+      renderGradebook();
+      renderFinance();
+      showToast("O'quvchi ma'lumotlari o'chirildi", "info");
+    }
+
+    function renderGradebook() {
+      const tbody = document.getElementById('gradebook-tbody');
+      tbody.innerHTML = state.students.map((s, sIndex) => {
+        const avg = (s.grades.reduce((a, b) => a + b, 0) / s.grades.length).toFixed(1);
+        return `
+          <tr class="hover:bg-gray-800/40 transition">
+            <td class="py-3 px-4 font-bold text-white text-xs flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md bg-gray-800 flex items-center justify-center text-[10px] text-brand-400">${s.name.charAt(0)}</div>
+              ${s.name}
+            </td>
+            ${s.grades.map((g, gIndex) => `
+              <td class="py-3 px-2 text-center">
+                <button onclick="cycleGrade(${sIndex}, ${gIndex})" class="w-8 h-8 rounded-lg text-xs font-bold transition ${g === 5 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : g === 4 ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                  ${g}
+                </button>
+              </td>
+            `).join('')}
+            <td class="py-3 px-2 text-center font-extrabold text-xs text-brand-400">${avg}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function cycleGrade(sIndex, gIndex) {
+      let current = state.students[sIndex].grades[gIndex];
+      current = current >= 5 ? 3 : current + 1;
+      state.students[sIndex].grades[gIndex] = current;
+      
+      const avg = state.students[sIndex].grades.reduce((a, b) => a + b, 0) / state.students[sIndex].grades.length;
+      state.students[sIndex].gpa = parseFloat(avg.toFixed(2));
+
+      renderGradebook();
+      renderDashboard();
+      showToast("Baho yangilandi");
+    }
+
+    function renderFinance() {
+      const tbody = document.getElementById('finance-tbody');
+      let totalColl = 0;
+      let totalPend = 0;
+
+      tbody.innerHTML = state.students.map(s => {
+        const debt = s.feeTotal - s.feePaid;
+        totalColl += s.feePaid;
+        totalPend += debt;
+        const statusClass = debt === 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+        return `
+          <tr class="hover:bg-gray-800/40 transition">
+            <td class="py-4 px-6 font-bold text-xs text-white">${s.name}</td>
+            <td class="py-4 px-6 text-xs text-gray-300">$${s.feeTotal.toLocaleString()}</td>
+            <td class="py-4 px-6 text-xs font-bold text-emerald-400">$${s.feePaid.toLocaleString()}</td>
+            <td class="py-4 px-6 text-xs font-bold ${debt > 0 ? 'text-amber-400' : 'text-gray-500'}">$${debt.toLocaleString()}</td>
+            <td class="py-4 px-6">
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${statusClass}">
+                ${debt === 0 ? 'To\'liq To\'langan' : 'Qarzdorlik Bor'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('fin-total-collected').innerText = '$' + totalColl.toLocaleString();
+      document.getElementById('fin-pending').innerText = '$' + totalPend.toLocaleString();
+    }
+
+    function openPaymentModal() {
+      const amount = prompt("To'lov summasini kiriting ($ USD):", "1000");
+      if (amount && !isNaN(amount)) {
+        state.students[2].feePaid += parseInt(amount);
+        renderFinance();
+        renderDashboard();
+        showToast(`$${amount} to'lov qabul qilindi!`);
+      }
+    }
+
+    function renderTasks() {
+      const cols = { todo: 'tasks-todo-container', progress: 'tasks-progress-container', done: 'tasks-done-container' };
+      const counts = { todo: 0, progress: 0, done: 0 };
+
+      Object.keys(cols).forEach(key => document.getElementById(cols[key]).innerHTML = '');
+
+      state.tasks.forEach(t => {
+        counts[t.status]++;
+        const card = document.createElement('div');
+        card.className = "bg-gray-900/90 border border-gray-800 p-4 rounded-xl space-y-2 hover:border-gray-700 transition";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <span class="text-[10px] uppercase font-bold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-500/20">${t.subject}</span>
+            <span class="text-[10px] text-gray-500">${t.dueDate}</span>
+          </div>
+          <h4 class="text-xs font-bold text-white">${t.title}</h4>
+          <div class="pt-2 flex justify-between items-center border-t border-gray-800/60">
+            <button onclick="moveTask(${t.id})" class="text-[11px] text-gray-400 hover:text-white font-bold flex items-center gap-1">
+              <span>Statusni o'zgartirish</span>
+              <i data-lucide="arrow-right-circle" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        document.getElementById(cols[t.status]).appendChild(card);
+      });
+
+      document.getElementById('task-count-todo').innerText = counts.todo;
+      document.getElementById('task-count-progress').innerText = counts.progress;
+      document.getElementById('task-count-done').innerText = counts.done;
+
+      lucide.createIcons();
+    }
+
+    function moveTask(id) {
+      const task = state.tasks.find(t => t.id === id);
+      if (task) {
+        if (task.status === 'todo') task.status = 'progress';
+        else if (task.status === 'progress') task.status = 'done';
+        else task.status = 'todo';
+        renderTasks();
+        showToast("Vazifa holati yangilandi");
+      }
+    }
+
+    function addNewTaskPrompt() {
+      const title = prompt("Vazifa nomi:");
+      if (title) {
+        state.tasks.push({ id: Date.now(), title, subject: "Aktiv Fan", dueDate: "Yangi", status: "todo" });
+        renderTasks();
+        showToast("Yangi topshiriq qo'shildi");
+      }
+    }
+
+    function toggleQuickAddModal() { openAddStudentModal(); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderDashboard();
+      renderStudentsTable();
+      renderGradebook();
+      renderFinance();
+      renderTasks();
+    });
+  </script>
+</body>
+</html>   ФЫ
